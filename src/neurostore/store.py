@@ -53,6 +53,7 @@ class Store:
         self._files = SignalFiles(self.root)
 
     def close(self) -> None:
+        """Close the database connection."""
         self._db.close()
 
     def __enter__(self) -> Store:
@@ -73,6 +74,7 @@ class Store:
         return subject_id
 
     def add_session(self, subject_id: str, start_time: datetime, protocol: str) -> str:
+        """Create a session for an existing subject and return the new session ID."""
         self._require_write("add_session", subject_id)
         start = to_utc(start_time, "session start_time")
         validate_label(protocol, "protocol")
@@ -124,6 +126,7 @@ class Store:
     def list_recordings(
         self, subject_id: str | None = None, protocol: str | None = None
     ) -> list[RecordingInfo]:
+        """Return recordings, optionally filtered by subject and protocol, oldest first."""
         recordings = self._db.find_recordings(subject_id=subject_id, protocol=protocol)
         self._log_read("list_recordings", subject_id)
         return recordings

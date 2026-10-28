@@ -170,7 +170,8 @@ class Database:
         ).fetchone()
         if row is None:
             raise KeyError(recording_id)
-        return row
+        path, checksum = row
+        return str(path), str(checksum)
 
     def events(self, recording_id: str, event_type: str | None = None) -> list[Event]:
         """A recording's events in time order, optionally of one type."""

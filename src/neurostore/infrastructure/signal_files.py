@@ -40,7 +40,8 @@ class SignalFiles:
                 f"{rel_path} failed SHA-256 verification;"
                 " it was modified or corrupted after it was written"
             )
-        return np.load(io.BytesIO(data), allow_pickle=False)
+        signal: np.ndarray = np.load(io.BytesIO(data), allow_pickle=False)
+        return signal
 
     def delete(self, rel_path: str) -> None:
         (self._root / rel_path).unlink(missing_ok=True)

@@ -10,7 +10,7 @@ PACKAGE = Path(__file__).parents[1] / "src" / "neurostore"
 
 
 def imported_modules(path: Path) -> set[str]:
-    names = set()
+    names: set[str] = set()
     for node in ast.walk(ast.parse(path.read_text())):
         if isinstance(node, ast.Import):
             names.update(alias.name for alias in node.names)
