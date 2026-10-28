@@ -162,3 +162,7 @@ This package is not suitable for real patient data as it stands. The gaps:
   next steps.
 - **Standard formats.** Interoperability would need import and export in BIDS (EEG/iEEG
   extensions) and EDF/EDF+, rather than a custom `.npy` + JSON layout.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
