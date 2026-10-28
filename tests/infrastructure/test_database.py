@@ -35,6 +35,8 @@ def test_recording_round_trip(db: Database) -> None:
     assert info.channels == CHANNELS
     assert (info.fs, info.n_samples, info.start_time) == (FS, N_SAMPLES, T0)
     assert db.signal_location("rec1") == ("p.npy", "abc")
+    with pytest.raises(KeyError):
+        db.signal_location("missing")
 
 
 def test_find_recordings_filters_combine(db: Database) -> None:
