@@ -55,6 +55,11 @@ pip install -e ".[dev]" && ruff check . && pytest
 The code is in three layers. Each depends only on the layers below it, and
 `tests/test_architecture.py` fails if that rule is broken.
 
+**Where to start reading:** `store.py`. Each public method there is a short list of steps
+(check role, validate, load, compute, log), so it shows the whole flow. From there, follow
+whichever step you are curious about into `domain/` (the rules and the slicing math) or
+`infrastructure/` (SQL and files).
+
 ```
 src/neurostore/
 ├── store.py              Store: the public entry point. Checks the role, validates input,
