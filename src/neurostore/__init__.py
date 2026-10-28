@@ -1,16 +1,13 @@
 """neurostore: minimal storage and retrieval of multi-channel recordings with event markers."""
 
-from neurostore.models import (
+from neurostore.domain.errors import (
     AccessDeniedError,
     ChecksumError,
-    Epochs,
-    Event,
     NeurostoreError,
     NotFoundError,
-    RecordingInfo,
-    Role,
     ValidationError,
 )
+from neurostore.domain.models import Epochs, Event, RecordingInfo, Role
 from neurostore.store import Store
 
 __all__ = [

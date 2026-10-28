@@ -34,7 +34,7 @@ Use the Python API when you can, because it records each read in the audit log:
 from pathlib import Path
 from neurostore import Store
 
-with Store(Path("my_store"), actor="your-name") as store:   # read-only by default
+with Store(Path("my_store"), actor="your-name") as store:  # read-only by default
     for rec in store.list_recordings():
         print(rec.id, rec.protocol, rec.fs, rec.n_samples, rec.channels)
     for row in store.audit_log()[-20:]:
