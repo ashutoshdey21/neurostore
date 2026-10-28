@@ -5,8 +5,9 @@ A small Python package for storing and querying multi-channel time-series record
 sample: a deliberately minimal take on the collect → store → retrieve loop behind
 neurostimulation experiments. All data used here is synthetic.
 
-For an illustrated walkthrough of the whole project (data model, architecture, API, time
-conventions, design decisions, and scope), open [docs/index.html](docs/index.html) in a browser.
+**[Illustrated walkthrough](https://ashutoshdey21.github.io/neurostore/)** of the whole project:
+data model, architecture, API, time conventions, design decisions, and scope
+(source: [docs/index.html](docs/index.html)).
 For setup, inspecting a store, handling errors, and backup and restore, see
 [docs/RUNBOOK.md](docs/RUNBOOK.md).
 

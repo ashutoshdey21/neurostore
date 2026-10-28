@@ -240,7 +240,7 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
         <table>
           <thead><tr><th>Layer</th><th>Modules</th><th>Job</th></tr></thead>
           <tbody>
-            <tr><td>Public entry point</td><td><a href="../src/neurostore/store.py"><code>store.py</code></a></td><td>Checks the role, validates input, calls storage, writes the audit log. Contains no SQL and no file formats.</td></tr>
+            <tr><td>Public entry point</td><td><a href="https://github.com/ashutoshdey21/neurostore/blob/main/src/neurostore/store.py"><code>store.py</code></a></td><td>Checks the role, validates input, calls storage, writes the audit log. Contains no SQL and no file formats.</td></tr>
             <tr><td>Infrastructure</td><td><code>database.py</code>, <code>signal_files.py</code>, <code>exports.py</code></td><td>How things are saved: every SQL statement, <code>.npy</code> files with checksum checks, and export folders.</td></tr>
             <tr><td>Domain</td><td><code>models.py</code>, <code>errors.py</code>, <code>validation.py</code>, <code>windows.py</code>, <code>export.py</code></td><td>Data types, rules, and arithmetic on plain arrays. No file or database access, so it can be tested without a store.</td></tr>
           </tbody>
@@ -369,7 +369,7 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
       </ul>
     </section>
 
-    <footer>neurostore · a code sample. All data shown is synthetic. See the <a href="../README.md">README</a> for setup.</footer>
+    <footer>neurostore · a code sample. All data shown is synthetic. See the <a href="https://github.com/ashutoshdey21/neurostore#readme">README</a> for setup.</footer>
   </main>
 </div>
 
