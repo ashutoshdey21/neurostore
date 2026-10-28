@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>neurostore</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with full-width figures; a sticky contents rail on wide screens. */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --fg: #18202c;
+  --muted: #5a6577;
+  --line: #d9dfe8;
+  --signal: #2353b8;      /* trace + links */
+  --pulse: #b02a64;       /* stimulation events */
+  --epoch: rgba(35, 83, 184, 0.10);
+  --skip: rgba(176, 42, 100, 0.10);
+  --code-bg: #eef2f7;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151d; --surface: #171e29; --fg: #e3e8f0; --muted: #98a3b5; --line: #2a3442;
+    --signal: #7ea6ff; --pulse: #f07aa8; --epoch: rgba(126, 166, 255, 0.13);
+    --skip: rgba(240, 122, 168, 0.12); --code-bg: #1c2532; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151d; --surface: #171e29; --fg: #e3e8f0; --muted: #98a3b5; --line: #2a3442;
+  --signal: #7ea6ff; --pulse: #f07aa8; --epoch: rgba(126, 166, 255, 0.13);
+  --skip: rgba(240, 122, 168, 0.12); --code-bg: #1c2532; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 1rem/1.65 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page {
+  max-width: 72rem; margin: 0 auto; padding-block: 3rem 5rem;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem;
+}
+@media (min-width: 64rem) {
+  .page { grid-template-columns: 12rem minmax(0, 1fr); }
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 2rem); align-self: start; }
+}
+main { min-width: 0; max-width: 46rem; }
+
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.1rem; font-weight: 500; }
+p { margin: 0; }
+a { color: var(--signal); text-underline-offset: 0.18em; }
+a:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 2px; }
+code, pre, .mono { font-family: var(--mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+pre {
+  background: var(--code-bg); padding: 1rem 1.1rem; border-radius: 8px; margin: 0;
+  overflow-x: auto; line-height: 1.55; font-size: 0.84rem;
+}
+pre code { background: none; padding: 0; }
+
+.eyebrow {
+  font: 500 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+section { display: grid; gap: 1rem; padding-top: 3rem; scroll-margin-top: 1rem; }
+section + section { border-top: 1px solid var(--line); margin-top: 3rem; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 40rem; }
+header.hero { display: grid; gap: 1rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  font: 500 0.78rem/1 var(--mono); padding: 0.4rem 0.6rem; border: 1px solid var(--line);
+  border-radius: 999px; color: var(--muted); background: var(--surface);
+}
+
+.toc { font-size: 0.88rem; }
+.toc ol { list-style: none; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--fg); }
+
+figure { margin: 0; display: grid; gap: 0.6rem; }
+figcaption { font-size: 0.85rem; color: var(--muted); }
+.figbox {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.75rem; overflow-x: auto;
+}
+.figbox svg { display: block; width: 100%; min-width: 34rem; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.sw { width: 0.9rem; height: 0.6rem; border-radius: 2px; display: inline-block; }
+
+.model { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; }
+.entity { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem; display: grid; gap: 0.5rem; align-content: start; }
+.entity h3 { font-size: 1rem; }
+.entity .rel { font: 400 0.75rem/1.3 var(--mono); color: var(--muted); }
+.entity ul { margin: 0; padding: 0; list-style: none; font: 400 0.8rem/1.5 var(--mono); }
+.entity li::before { content: "· "; color: var(--muted); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 36rem; font-size: 0.88rem; }
+th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.72rem/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.role { font: 500 0.72rem/1 var(--mono); padding: 0.25rem 0.45rem; border-radius: 4px; white-space: nowrap; }
+.role.r { color: var(--signal); background: var(--epoch); }
+.role.w { color: var(--pulse); background: var(--skip); }
+
+.flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font: 400 0.82rem/1.3 var(--mono); }
+.flow span.step { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.45rem 0.6rem; }
+.flow span.arrow { color: var(--muted); }
+
+.decisions { display: grid; gap: 1.25rem; }
+.decision { display: grid; gap: 0.35rem; }
+.gaps { display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
+.gaps li { display: grid; gap: 0.2rem; padding-left: 1rem; border-left: 2px solid var(--line); }
+.gaps strong { font-weight: 600; }
+ul.plain { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow">Contents</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#model">Data model</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#api">Public API</a></li>
+      <li><a href="#time">Time and samples</a></li>
+      <li><a href="#safeguards">Integrity, audit, privacy</a></li>
+      <li><a href="#tests">Tests</a></li>
+      <li><a href="#scope">Left out on purpose</a></li>
+      <li><a href="#clinical">For real clinical data</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero" id="overview">
+      <div class="eyebrow">Python package · code sample · synthetic data only</div>
+      <h1>neurostore</h1>
+      <p class="lede">A small store for multi-channel electrophysiology recordings and the brain-stimulation events inside them. Write a recording, mark its TMS pulses, then pull back time windows or event-locked epochs, with every read and write logged.</p>
+      <div class="chips">
+        <span class="chip">Python 3.11+</span>
+        <span class="chip">numpy · sqlite3</span>
+        <span class="chip">~500 lines of source</span>
+        <span class="chip">41 tests</span>
+      </div>
+    </header>
+
+    <section aria-labelledby="fig-title" style="border-top:0;margin-top:0">
+      <figure>
+        <div class="figbox">
+          <svg id="trace" viewBox="0 0 960 230" role="img" aria-labelledby="fig-title">
+            <title id="fig-title">A 10-second synthetic trace with five TMS pulses; three epochs are kept and two near the edges are skipped</title>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--signal)"></i>signal (one channel)</span>
+          <span><i class="sw" style="background:var(--pulse)"></i><code>tms_pulse</code> event</span>
+          <span><i class="sw" style="background:var(--epoch);border:1px solid var(--signal)"></i>epoch kept</span>
+          <span><i class="sw" style="background:var(--skip);border:1px dashed var(--pulse)"></i>epoch skipped</span>
+        </div>
+        <figcaption>What <code>get_epochs(rec, "tms_pulse", pre_s=0.3, post_s=0.6)</code> does. Each pulse gets a window from 0.3 s before to 0.6 s after. The first and last pulses are too close to the edges of the recording, so they are skipped and reported as <code>n_skipped = 2</code>. Synthetic data.</figcaption>
+      </figure>
+      <p>The package answers three questions a lab asks of its recordings: <em>what do we have</em> (<code>list_recordings</code>), <em>what happened between these two times</em> (<code>get_window</code>), and <em>what does the brain do right after each stimulus</em> (<code>get_epochs</code>). Everything else supports those three: validation on the way in, a checksum on the way out, and an audit trail of who did what.</p>
+<pre><code>from neurostore import Event, Role, Store
+
+store = Store(Path("my_store"), actor="alice", role=Role.READ_WRITE)
+session = store.add_session(store.add_subject(), datetime.now(UTC), protocol="sp_tms")
+rec = store.add_recording(session, signal, 250.0, channels, datetime.now(UTC))
+store.add_events(rec, [Event("tms_pulse", t, {"intensity_pct": 110.0}) for t in (5, 20, 40)])
+
+epochs, skipped = store.get_epochs(rec, "tms_pulse", pre_s=0.1, post_s=0.3)
+evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
+    </section>
+
+    <section id="model">
+      <div class="eyebrow">Data model</div>
+      <h2>Four entities, each owned by the one before</h2>
+      <p>A subject has sessions, a session has recordings, and a recording has events. Only the recording carries signal data. IDs are random UUIDs, so they reveal nothing about the person or the order of enrolment.</p>
+      <div class="model">
+        <div class="entity">
+          <h3>Subject</h3>
+          <div class="rel">root</div>
+          <ul><li>id (UUID)</li></ul>
+          <p style="font-size:.8rem;color:var(--muted)">Nothing else. No name, birth date, or notes field.</p>
+        </div>
+        <div class="entity">
+          <h3>Session</h3>
+          <div class="rel">→ subject</div>
+          <ul><li>start_time (UTC)</li><li>protocol label</li></ul>
+        </div>
+        <div class="entity">
+          <h3>Recording</h3>
+          <div class="rel">→ session</div>
+          <ul><li>channels</li><li>fs (Hz)</li><li>start_time (UTC)</li><li>n_samples</li><li>path + sha256</li></ul>
+        </div>
+        <div class="entity">
+          <h3>Event</h3>
+          <div class="rel">→ recording</div>
+          <ul><li>type, e.g. tms_pulse</li><li>t (s from start)</li><li>params, e.g. intensity_pct</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="eyebrow">Architecture</div>
+      <h2>A database for facts, files for samples</h2>
+      <p>A store is one directory. <code>neurostore.db</code> is a SQLite file with the metadata, events, and audit log. <code>signals/</code> holds one <code>.npy</code> file per recording, shaped channels × samples, float32. The database row for a recording points to its file by relative path and stores the file's SHA-256.</p>
+<pre><code>my_store/
+├── neurostore.db           subjects · sessions · recordings · events · audit_log
+└── signals/
+    ├── 3f0c…e1.npy          float32, (channels, samples), written once
+    └── 9a72…4b.npy</code></pre>
+      <p>Every public method follows the same path:</p>
+      <div class="flow" aria-label="Request flow">
+        <span class="step">check role</span><span class="arrow">→</span>
+        <span class="step">validate input</span><span class="arrow">→</span>
+        <span class="step">read or write</span><span class="arrow">→</span>
+        <span class="step">verify checksum (reads)</span><span class="arrow">→</span>
+        <span class="step">append audit row</span>
+      </div>
+      <p>The code is split in two. <a href="../src/neurostore/models.py"><code>models.py</code></a> holds the data types, error classes, and validation rules, with no I/O. <a href="../src/neurostore/store.py"><code>store.py</code></a> holds the SQLite schema and the <code>Store</code> class. Writes put the audit row in the same transaction as the data, so a write and its log entry succeed or fail together. If the database insert for a recording fails, its <code>.npy</code> file is removed again.</p>
+    </section>
+
+    <section id="api">
+      <div class="eyebrow">Public API</div>
+      <h2>What you can call</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Role</th><th>Returns</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>Store(root, actor, role)</code></td><td>—</td><td>Store</td><td><code>actor</code> is required. Role defaults to read-only, which cannot create a new store.</td></tr>
+            <tr><td><code>add_subject()</code></td><td><span class="role w">write</span></td><td>UUID</td><td>Takes no arguments, so there is nothing identifying to pass in.</td></tr>
+            <tr><td><code>add_session(subject_id, start_time, protocol)</code></td><td><span class="role w">write</span></td><td>UUID</td><td>Time must be timezone-aware. Protocol is a short label.</td></tr>
+            <tr><td><code>add_recording(session_id, signal, fs, channels, start_time)</code></td><td><span class="role w">write</span></td><td>UUID</td><td>float32, 2-D, fs &gt; 0, one unique name per row.</td></tr>
+            <tr><td><code>add_events(recording_id, events)</code></td><td><span class="role w">write</span></td><td>count</td><td>All events are checked before any are written.</td></tr>
+            <tr><td><code>list_recordings(subject_id, protocol)</code></td><td><span class="role r">read</span></td><td>list of RecordingInfo</td><td>Both filters optional.</td></tr>
+            <tr><td><code>get_window(recording_id, t_start, t_end, channels)</code></td><td><span class="role r">read</span></td><td>(channels, samples)</td><td>Half-open interval; channels in the order you ask.</td></tr>
+            <tr><td><code>get_epochs(recording_id, event_type, pre_s, post_s)</code></td><td><span class="role r">read</span></td><td>Epochs(data, n_skipped)</td><td><code>data</code> is (events, channels, samples).</td></tr>
+            <tr><td><code>get_events(recording_id, event_type)</code></td><td><span class="role r">read</span></td><td>list of Event</td><td>Time order.</td></tr>
+            <tr><td><code>export_deidentified(recording_id, out_dir)</code></td><td><span class="role r">read</span></td><td>export folder</td><td><code>signal.npy</code> + <code>metadata.json</code> under a fresh export ID.</td></tr>
+            <tr><td><code>audit_log()</code></td><td><span class="role r">read</span></td><td>rows</td><td>(actor, action, object_id, UTC time), oldest first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Errors are specific classes: <code>ValidationError</code>, <code>AccessDeniedError</code>, <code>ChecksumError</code>, and <code>NotFoundError</code>, all under <code>NeurostoreError</code>. Messages say what was wrong and what was expected, for example <code>channel count mismatch: 2 names for 3 signal rows</code>.</p>
+    </section>
+
+    <section id="time">
+      <div class="eyebrow">Time and samples</div>
+      <h2>Where a window starts and stops</h2>
+      <p>Off-by-one errors are the classic bug in this kind of code, so the rule is fixed and tested. A time <em>t</em> maps to sample <code>round(t × fs)</code>. A window <code>[t_start, t_end)</code> includes its start sample and excludes its end sample. Rounding, rather than truncating, matters because <code>0.1 × 100</code> is <code>10.000000000000002</code> in floating point.</p>
+      <figure>
+        <div class="figbox">
+          <svg viewBox="0 0 640 120" role="img" aria-label="Samples 0 to 9 at 100 Hz; window from 0.03 to 0.07 seconds selects samples 3, 4, 5 and 6">
+            <g font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)">
+              <rect x="215" y="22" width="248" height="56" rx="6" fill="var(--epoch)" stroke="var(--signal)"/>
+              <line x1="40" y1="70" x2="610" y2="70" stroke="var(--line)" stroke-width="1.5"/>
+              <g id="ticks"></g>
+              <text x="215" y="16" fill="var(--signal)">t_start = 0.03 s → sample 3 (included)</text>
+              <text x="463" y="108" fill="var(--pulse)" text-anchor="middle">t_end = 0.07 s → sample 7 (excluded)</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>At 100 Hz, <code>get_window(rec, 0.03, 0.07)</code> returns samples 3–6: four samples. The next window, starting at 0.07, begins exactly at sample 7, so adjacent windows tile with no gap or overlap.</figcaption>
+      </figure>
+      <p>Epochs use the same rule. An epoch spans <code>[event − pre_s, event + post_s)</code>, so every epoch has exactly <code>round(pre_s·fs) + round(post_s·fs)</code> samples and they stack into one array. An event whose epoch would start before sample 0 or end past the last sample is skipped and counted.</p>
+    </section>
+
+    <section id="safeguards">
+      <div class="eyebrow">Design decisions</div>
+      <h2>Integrity, audit, and privacy</h2>
+      <div class="decisions">
+        <div class="decision">
+          <h3>Why SQLite plus .npy</h3>
+          <p>Metadata and events are small and relational: you filter by subject, protocol, and event type. Signals are large dense arrays read in bulk. SQL suits the first and a flat binary file suits the second. Both are single files, need no server, and come with Python and numpy, so the store can be opened anywhere.</p>
+        </div>
+        <div class="decision">
+          <h3>Why the checksum</h3>
+          <p>The database and the signal files can drift apart: a file is overwritten, half-copied, or edited by another tool. The SHA-256 recorded at write time is checked on every read, so a single changed sample raises <code>ChecksumError</code> before any analysis runs on it. A test edits one value in a file and checks that both window and epoch reads refuse it.</p>
+        </div>
+        <div class="decision">
+          <h3>Why the audit log</h3>
+          <p>With human-subject data you need to be able to say afterwards who read or changed what, and when. Every method appends <code>(actor, action, object_id, UTC time)</code>. Writes log in the same transaction as the data. Denied write attempts are logged too, as <code>add_subject:denied</code>.</p>
+        </div>
+        <div class="decision">
+          <h3>Privacy-related choices</h3>
+          <p>Subjects are bare UUIDs. Protocol labels, event types, and parameter names must match <code>[A-Za-z0-9_.-]{1,64}</code>, so no field can hold free text like a name or a clinical note. The de-identified export drops internal IDs, file paths, and absolute start times; event times stay relative to the start of the recording. These are design choices. They do not on their own make data de-identified.</p>
+        </div>
+        <div class="decision">
+          <h3>Roles</h3>
+          <p>A store opens read-only unless you ask for <code>Role.READ_WRITE</code>. The caller declares the role, so it prevents accidental writes, not deliberate misuse.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tests">
+      <div class="eyebrow">Tests</div>
+      <h2>What the 41 tests check</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Covers</th></tr></thead>
+          <tbody>
+            <tr><td><code>test_roundtrip.py</code></td><td>Signal, metadata, and events come back identical; reopening from disk; list filters; export contains no internal IDs or paths.</td></tr>
+            <tr><td><code>test_window.py</code></td><td>First sample, last sample, whole recording, the 0.1 × 100 rounding case, tiling, channel order, out-of-range windows.</td></tr>
+            <tr><td><code>test_epochs.py</code></td><td>Shapes and contents, epochs flush against both edges, skip counts, filtering by event type, no matching events.</td></tr>
+            <tr><td><code>test_integrity.py</code></td><td>One edited sample in a <code>.npy</code> file is caught on read.</td></tr>
+            <tr><td><code>test_validation.py</code></td><td>Sampling rate, channel count, duplicate names, dtype and shape, naive datetimes, events outside the recording (with nothing partially written), free-text labels, unknown IDs.</td></tr>
+            <tr><td><code>test_access.py</code></td><td>Read-only cannot write or create a store; actor required; the audit log has the exact sequence of reads, writes, and the denial, in UTC.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>CI runs <code>ruff check</code>, <code>ruff format --check</code>, and <code>pytest</code> on Python 3.11 and 3.12. <code>scripts/demo.py</code> generates a 60-second, 8-channel, 250 Hz synthetic recording with nine TMS pulses, stores it, and prints the averaged evoked response per channel.</p>
+    </section>
+
+    <section id="scope">
+      <div class="eyebrow">Scope</div>
+      <h2>Left out on purpose</h2>
+      <p>Each of these would be needed in a real system. They were left out to keep the sample small and the core paths easy to read.</p>
+      <ul class="gaps">
+        <li><strong>Update and delete</strong><span>Recordings are append-only. Changing a recording in place would silently change the data earlier analyses used, and a delete has to remove the file, the rows, the events, and keep an audit entry, all consistently. A real system needs deletion at least for consent withdrawal: an audited, admin-only hard delete, with corrections stored as new versions instead of edits.</span></li>
+        <li><strong>Memory-mapped or partial reads</strong><span><code>get_window</code> loads the whole file, verifies the checksum over all of it, then slices. That is fine for minutes of 8-channel data. A one-hour, 256-channel, 2 kHz float32 recording is about 3.7 GB, and you would not want to read it all for a two-second window. The fix is chunked storage (HDF5 or Zarr) with a checksum per chunk, so a read touches and verifies only the chunks it needs.</span></li>
+        <li><strong>Concurrent writers</strong><span>SQLite allows one writer at a time. Two processes writing at once will wait, then fail with <code>database is locked</code>. There is no WAL mode, retry, or busy timeout configured. UUID file names do prevent two writers from overwriting each other's signal files. Multi-user use would move metadata to Postgres.</span></li>
+        <li><strong>A command-line interface</strong><span>The package is Python-only. Commands like <code>neurostore ingest</code>, <code>list</code>, and <code>export</code> would be a thin wrapper over the same methods, but the spec asked for a library.</span></li>
+      </ul>
+    </section>
+
+    <section id="clinical">
+      <div class="eyebrow">Known gaps</div>
+      <h2>What would change for real clinical data</h2>
+      <p>This package is not suitable for real patient data as it stands.</p>
+      <ul class="plain">
+        <li><strong>Encryption at rest</strong>, with managed keys. Today the database and signals are plain files.</li>
+        <li><strong>Real authentication and authorization.</strong> Actor and role should come from an identity provider and be enforced outside the client process.</li>
+        <li><strong>A tamper-evident audit log</strong> in an append-only store that users cannot edit.</li>
+        <li><strong>Formal de-identification review.</strong> Signals, event timing, and metadata can still identify someone.</li>
+        <li><strong>Institutional compliance review</strong>: IRB, data-use agreements, and the institution's security and privacy offices.</li>
+        <li><strong>Scalable storage</strong>: HDF5 or Zarr for chunked signals, Parquet for events and exports, Postgres for multi-user metadata.</li>
+        <li><strong>Standard formats</strong>: BIDS (EEG and iEEG) and EDF/EDF+ import and export.</li>
+      </ul>
+    </section>
+
+    <footer>neurostore · a code sample. All data shown is synthetic. See the <a href="../README.md">README</a> for setup.</footer>
+  </main>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    parent.appendChild(n);
+    return n;
+  };
+
+  // Main figure: 10 s of synthetic signal with evoked responses after each pulse.
+  const svg = document.getElementById("trace");
+  const W = 960, X0 = 30, X1 = 940, MID = 110, DUR = 10, FS = 100;
+  const PULSES = [0.15, 2.6, 5.1, 7.6, 9.8], PRE = 0.3, POST = 0.6;
+  const x = (t) => X0 + (t / DUR) * (X1 - X0);
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296) - 0.5;
+
+  for (const p of PULSES) {
+    const kept = p - PRE >= 0 && p + POST <= DUR;
+    el("rect", {
+      x: x(Math.max(0, p - PRE)), y: 22, height: 164, rx: 4,
+      width: x(Math.min(DUR, p + POST)) - x(Math.max(0, p - PRE)),
+      fill: kept ? "var(--epoch)" : "var(--skip)",
+      stroke: kept ? "var(--signal)" : "var(--pulse)",
+      "stroke-dasharray": kept ? "none" : "4 3", "stroke-width": 1,
+    }, svg);
+    if (!kept) {
+      const label = el("text", {
+        x: x(p), y: 202, "text-anchor": p < 1 ? "start" : "end",
+        fill: "var(--pulse)", "font-family": "IBM Plex Mono, monospace", "font-size": 12,
+      }, svg);
+      label.textContent = "skipped";
+    }
+  }
+
+  let d = "", lp = 0;
+  for (let i = 0; i <= DUR * FS; i++) {
+    const t = i / FS;
+    lp = 0.7 * lp + 0.3 * rand() * 26;
+    let v = lp + 6 * Math.sin(2 * Math.PI * 1.3 * t);
+    for (const p of PULSES) {
+      const dt = t - p;
+      if (dt >= 0 && dt < 0.5) v += 48 * Math.exp(-dt / 0.08) * Math.sin(2 * Math.PI * 9 * dt);
+    }
+    d += (i ? "L" : "M") + x(t).toFixed(1) + " " + (MID - v).toFixed(1);
+  }
+  el("path", { d, fill: "none", stroke: "var(--signal)", "stroke-width": 1.3, "stroke-linejoin": "round" }, svg);
+
+  for (const p of PULSES) {
+    el("line", { x1: x(p), x2: x(p), y1: 14, y2: 186, stroke: "var(--pulse)", "stroke-width": 1.5 }, svg);
+    el("path", { d: `M${x(p) - 5} 8 L${x(p) + 5} 8 L${x(p)} 16 Z`, fill: "var(--pulse)" }, svg);
+  }
+  el("line", { x1: X0, x2: X1, y1: 214, y2: 214, stroke: "var(--line)" }, svg);
+  for (let s = 0; s <= DUR; s += 2) {
+    el("line", { x1: x(s), x2: x(s), y1: 214, y2: 219, stroke: "var(--muted)" }, svg);
+    const tx = el("text", {
+      x: x(s), y: 230, "text-anchor": s === 0 ? "start" : s === DUR ? "end" : "middle",
+      fill: "var(--muted)", "font-family": "IBM Plex Mono, monospace", "font-size": 11,
+    }, svg);
+    tx.textContent = s + " s";
+  }
+
+  // Sample-index figure: ticks for samples 0..9, samples 3..6 highlighted.
+  const ticks = document.getElementById("ticks");
+  for (let i = 0; i < 10; i++) {
+    const cx = 60 + i * 62, inside = i >= 3 && i <= 6;
+    el("circle", { cx, cy: 70, r: inside ? 6 : 4, fill: inside ? "var(--signal)" : "var(--muted)" }, ticks);
+    const t = el("text", { x: cx, y: 54, "text-anchor": "middle", fill: inside ? "var(--fg)" : "var(--muted)" }, ticks);
+    t.textContent = i;
+  }
+})();
+</script>
+</body>
+</html>
