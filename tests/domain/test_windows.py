@@ -13,7 +13,7 @@ from tests.sample_data import CHANNELS, DURATION, FS, N_SAMPLES, make_signal
     [
         (0.0, 0.01, (0, 1)),  # first sample only
         (0.0, 1.0, (0, 100)),  # end is exclusive
-        (0.1, 0.3, (10, 30)),  # 0.1 * 100 is 10.000000000000002 in floating point
+        (0.29, 0.5, (29, 50)),  # 0.29 * 100 is 28.999999999999996; truncating would give 28
         (DURATION - 0.01, DURATION, (N_SAMPLES - 1, N_SAMPLES)),  # last sample only
         (0.0, DURATION, (0, N_SAMPLES)),  # whole recording
     ],

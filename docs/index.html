@@ -248,7 +248,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
     <section id="time">
       <div class="eyebrow">Time and samples</div>
       <h2>Where a window starts and stops</h2>
-      <p>Off-by-one errors are the classic bug in this kind of code, so the rule is fixed and tested. A time <em>t</em> maps to sample <code>round(t × fs)</code>. A window <code>[t_start, t_end)</code> includes its start sample and excludes its end sample. Rounding, rather than truncating, matters because <code>0.1 × 100</code> is <code>10.000000000000002</code> in floating point.</p>
+      <p>Off-by-one errors are the classic bug in this kind of code, so the rule is fixed and tested. A time <em>t</em> maps to sample <code>round(t × fs)</code>. A window <code>[t_start, t_end)</code> includes its start sample and excludes its end sample. Rounding, rather than truncating, matters because <code>0.29 × 100</code> is <code>28.999999999999996</code> in floating point: truncating gives sample 28, rounding gives the intended 29.</p>
       <figure>
         <div class="figbox">
           <svg viewBox="0 0 640 120" role="img" aria-label="Samples 0 to 9 at 100 Hz; window from 0.03 to 0.07 seconds selects samples 3, 4, 5 and 6">
@@ -274,7 +274,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
           <thead><tr><th>File</th><th>Covers</th></tr></thead>
           <tbody>
             <tr><td><code>domain/test_validation.py</code></td><td>Sampling rate, channel count, duplicate names, dtype and shape, events outside the recording, parameter values, free-text labels, UTC conversion.</td></tr>
-            <tr><td><code>domain/test_windows.py</code></td><td>First sample, last sample, whole recording, the 0.1 × 100 rounding case, tiling, channel order, epoch shapes, epochs flush against both edges, skip counts.</td></tr>
+            <tr><td><code>domain/test_windows.py</code></td><td>First sample, last sample, whole recording, the 0.29 × 100 rounding case, tiling, channel order, epoch shapes, epochs flush against both edges, skip counts.</td></tr>
             <tr><td><code>domain/test_export.py</code></td><td>Export metadata keeps signal facts and drops IDs, protocol, and start time.</td></tr>
             <tr><td><code>infrastructure/test_database.py</code></td><td>Recording round trip, combined filters, event order, rollback on error, foreign keys, audit order, reopening.</td></tr>
             <tr><td><code>infrastructure/test_signal_files.py</code></td><td>Save and load round trip; one edited sample is caught on read.</td></tr>

@@ -17,7 +17,8 @@ from neurostore.domain.models import Epochs
 def to_sample(t: float, fs: float) -> int:
     """Nearest sample index for a time in seconds.
 
-    Rounding (not truncating) matters: 0.1 * 100 is 10.000000000000002 in floating point.
+    Rounding (not truncating) matters: 0.29 * 100 is 28.999999999999996 in floating point,
+    which truncates to 28 but rounds to the intended 29.
     """
     return round(t * fs)
 
