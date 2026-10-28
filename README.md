@@ -5,9 +5,9 @@ A small Python package for storing and querying multi-channel time-series record
 sample: a deliberately minimal take on the collect → store → retrieve loop behind
 neurostimulation experiments. All data used here is synthetic.
 
-**[Illustrated walkthrough](https://ashutoshdey21.github.io/neurostore/)** of the whole project:
-data model, architecture, API, time conventions, design decisions, and scope
-(source: [docs/index.html](docs/index.html)).
+The **[illustrated walkthrough](https://ashutoshdey21.github.io/neurostore/)** has diagrams of
+epoching and sample boundaries, the data model, the full API table, and what each test file
+covers (source: [docs/index.html](docs/index.html)).
 For setup, inspecting a store, handling errors, and backup and restore, see
 [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
@@ -39,7 +39,7 @@ pip install -e ".[dev]" && ruff check . && pytest
 ```
             Store(root, actor, role)
    ┌───────────────┴────────────────┐
-   │ validate inputs → check role   │
+   │ check role → validate input    │
    │ → do the work → append audit   │
    └───────┬─────────────────┬──────┘
            │                 │
@@ -82,13 +82,9 @@ Tests mirror the layers. `tests/domain` tests rules and arithmetic on plain arra
 `tests/test_store.py` covers only what `Store` adds: wiring, access control, the audit trail,
 and cleanup when a write fails. Each rule is tested once, in the layer that owns it.
 
-Conventions:
-
-- Times are seconds from recording start. `get_window(t_start, t_end)` returns the half-open
-  sample range `[round(t_start*fs), round(t_end*fs))`, so adjacent windows tile exactly.
-- An epoch spans `[event - pre_s, event + post_s)`. Events whose epoch would run past either
-  end of the recording are skipped and counted in `Epochs.n_skipped`.
-- Datetimes must be timezone-aware and are stored in UTC.
+Times are seconds from recording start, windows are half-open, and datetimes must be
+timezone-aware (stored in UTC). The walkthrough explains the
+[time and sample rules](https://ashutoshdey21.github.io/neurostore/#time) with diagrams.
 
 ## Design decisions
 
@@ -102,7 +98,7 @@ single-file, need no server, and ship with Python and numpy.
 overwritten, partially copied, or edited by another tool. A SHA-256 recorded at write time and
 checked on every read turns that silent corruption into a loud `ChecksumError` before any
 analysis runs on bad data. The cost is reading the whole file on each access, which is fine
-at this scale (see below).
+at this scale (see "Left out on purpose").
 
 **Why the audit log.** For human-subject data, who looked at or changed what, and when, is
 a question you need to be able to answer after the fact. Every read and write appends a row
@@ -119,13 +115,30 @@ guarantee of de-identification.
 **Roles.** A store is opened read-only by default; writes need `Role.READ_WRITE`. The role
 is declared by the caller, so this prevents accidents, not misuse.
 
-## Scope notes
+## Left out on purpose
 
-Kept out on purpose, to stay small: no update or delete operations (recordings are
-append-only), no partial/memory-mapped signal reads, no concurrency handling beyond what
-SQLite provides, and no CLI. `get_epochs` returns an `Epochs(data, n_skipped)` named tuple
-rather than a bare array so the skip count travels with the data. `get_events` and
-`audit_log` exist as small read helpers alongside the specified API.
+Each of these would be needed in a real system. They were left out to keep the sample small
+and the core paths easy to read.
+
+- **Update and delete.** Recordings are append-only. Changing a recording in place would
+  silently change the data earlier analyses used, and a delete has to remove the file, the
+  rows, and the events consistently while keeping an audit entry. A real system needs deletion
+  at least for consent withdrawal: an audited, admin-only delete, with corrections stored as
+  new versions instead of edits.
+- **Memory-mapped or partial reads.** `get_window` loads the whole file, verifies the checksum
+  over all of it, then slices. That is fine for minutes of 8-channel data. A one-hour,
+  256-channel, 2 kHz float32 recording is about 3.7 GB, too much to read for a two-second
+  window. The fix is chunked storage (HDF5 or Zarr) with a checksum per chunk.
+- **Concurrent writers.** SQLite allows one writer at a time; a second writer waits, then fails
+  with `database is locked`. No WAL mode, retry, or busy timeout is configured. UUID file names
+  do stop two writers from overwriting each other's signal files. Multi-user use would move
+  metadata to Postgres.
+- **A command-line interface.** The package is Python-only. Commands such as `ingest`, `list`,
+  and `export` would be a thin wrapper over the same methods.
+
+Two small additions to the requested API: `get_epochs` returns an `Epochs(data, n_skipped)`
+named tuple so the skip count travels with the data, and `get_events` and `audit_log` are
+read helpers.
 
 ## What I would change for real clinical data
 

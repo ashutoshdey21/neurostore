@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one reading column (~68ch) with full-width figures; a sticky contents rail on wide screens. */
+/* Layout: prose capped at ~68ch, tables and figures use the full (wider) column; sticky contents rail on wide screens. */
 :root {
   --bg: #f5f7fa;
   --surface: #ffffff;
@@ -48,14 +48,15 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .page {
-  max-width: 72rem; margin: 0 auto; padding-block: 3rem 5rem;
+  max-width: 78rem; margin: 0 auto; padding-block: 3rem 5rem;
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem;
 }
 @media (min-width: 64rem) {
   .page { grid-template-columns: 12rem minmax(0, 1fr); }
   .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 2rem); align-self: start; }
 }
-main { min-width: 0; max-width: 46rem; }
+main { min-width: 0; max-width: 62rem; }
+main p, figcaption, ul.plain { max-width: 46rem; }
 
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
 h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.02em; }
@@ -114,6 +115,8 @@ th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(
 th { font: 500 0.72rem/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 tr:last-child td { border-bottom: 0; }
 td code { white-space: nowrap; }
+.api td:first-child { width: 42%; }
+.api td:first-child code { white-space: normal; }
 .role { font: 500 0.72rem/1 var(--mono); padding: 0.25rem 0.45rem; border-radius: 4px; white-space: nowrap; }
 .role.r { color: var(--signal); background: var(--epoch); }
 .role.w { color: var(--pulse); background: var(--skip); }
@@ -122,11 +125,6 @@ td code { white-space: nowrap; }
 .flow span.step { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.45rem 0.6rem; }
 .flow span.arrow { color: var(--muted); }
 
-.decisions { display: grid; gap: 1.25rem; }
-.decision { display: grid; gap: 0.35rem; }
-.gaps { display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
-.gaps li { display: grid; gap: 0.2rem; padding-left: 1rem; border-left: 2px solid var(--line); }
-.gaps strong { font-weight: 600; }
 ul.plain { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
 footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
@@ -142,10 +140,8 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
       <li><a href="#architecture">Architecture</a></li>
       <li><a href="#api">Public API</a></li>
       <li><a href="#time">Time and samples</a></li>
-      <li><a href="#safeguards">Integrity, audit, privacy</a></li>
       <li><a href="#tests">Tests</a></li>
-      <li><a href="#scope">Left out on purpose</a></li>
-      <li><a href="#clinical">For real clinical data</a></li>
+      <li><a href="#more">Design and limits</a></li>
     </ol>
   </nav>
 
@@ -178,15 +174,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
         <figcaption>What <code>get_epochs(rec, "tms_pulse", pre_s=0.3, post_s=0.6)</code> does. Each pulse gets a window from 0.3 s before to 0.6 s after. The first and last pulses are too close to the edges of the recording, so they are skipped and reported as <code>n_skipped = 2</code>. Synthetic data.</figcaption>
       </figure>
       <p>The package answers three questions a lab asks of its recordings: <em>what do we have</em> (<code>list_recordings</code>), <em>what happened between these two times</em> (<code>get_window</code>), and <em>what does the brain do right after each stimulus</em> (<code>get_epochs</code>). Everything else supports those three: validation on the way in, a checksum on the way out, and an audit trail of who did what.</p>
-<pre><code>from neurostore import Event, Role, Store
-
-store = Store(Path("my_store"), actor="alice", role=Role.READ_WRITE)
-session = store.add_session(store.add_subject(), datetime.now(UTC), protocol="sp_tms")
-rec = store.add_recording(session, signal, 250.0, channels, datetime.now(UTC))
-store.add_events(rec, [Event("tms_pulse", t, {"intensity_pct": 110.0}) for t in (5, 20, 40)])
-
-epochs, skipped = store.get_epochs(rec, "tms_pulse", pre_s=0.1, post_s=0.3)
-evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
+      <p>To try it, see the <a href="https://github.com/ashutoshdey21/neurostore#quickstart">quickstart in the README</a>.</p>
     </section>
 
     <section id="model">
@@ -221,12 +209,7 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
     <section id="architecture">
       <div class="eyebrow">Architecture</div>
       <h2>A database for facts, files for samples</h2>
-      <p>A store is one directory. <code>neurostore.db</code> is a SQLite file with the metadata, events, and audit log. <code>signals/</code> holds one <code>.npy</code> file per recording, shaped channels × samples, float32. The database row for a recording points to its file by relative path and stores the file's SHA-256.</p>
-<pre><code>my_store/
-├── neurostore.db           subjects · sessions · recordings · events · audit_log
-└── signals/
-    ├── 3f0c…e1.npy          float32, (channels, samples), written once
-    └── 9a72…4b.npy</code></pre>
+      <p>A store is one directory: a SQLite file for metadata, events, and the audit log, and one <code>.npy</code> file per recording. The database row for a recording stores its file's path and SHA-256.</p>
       <p>Every public method follows the same path:</p>
       <div class="flow" aria-label="Request flow">
         <span class="step">check role</span><span class="arrow">→</span>
@@ -235,17 +218,7 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
         <span class="step">verify checksum (reads)</span><span class="arrow">→</span>
         <span class="step">append audit row</span>
       </div>
-      <p>The code is in three layers, and each one depends only on the layers below it. A test fails if one imports a layer it shouldn't.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Layer</th><th>Modules</th><th>Job</th></tr></thead>
-          <tbody>
-            <tr><td>Public entry point</td><td><a href="https://github.com/ashutoshdey21/neurostore/blob/main/src/neurostore/store.py"><code>store.py</code></a></td><td>Checks the role, validates input, calls storage, writes the audit log. Contains no SQL and no file formats.</td></tr>
-            <tr><td>Infrastructure</td><td><code>database.py</code>, <code>signal_files.py</code>, <code>exports.py</code></td><td>How things are saved: every SQL statement, <code>.npy</code> files with checksum checks, and export folders.</td></tr>
-            <tr><td>Domain</td><td><code>models.py</code>, <code>errors.py</code>, <code>validation.py</code>, <code>windows.py</code>, <code>export.py</code></td><td>Data types, rules, and arithmetic on plain arrays. No file or database access, so it can be tested without a store.</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <p>The code is split into three layers: the <code>Store</code> entry point, infrastructure (SQL and files), and domain (rules and arithmetic on plain arrays). The <a href="https://github.com/ashutoshdey21/neurostore#architecture">README</a> has the file-by-file layout and where to start reading.</p>
       <p>Writes put the audit row in the same transaction as the data, so a write and its log entry succeed or fail together. If the database insert for a recording fails, its <code>.npy</code> file is removed again.</p>
     </section>
 
@@ -253,7 +226,7 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
       <div class="eyebrow">Public API</div>
       <h2>What you can call</h2>
       <div class="table-wrap">
-        <table>
+        <table class="api">
           <thead><tr><th>Method</th><th>Role</th><th>Returns</th><th>Notes</th></tr></thead>
           <tbody>
             <tr><td><code>Store(root, actor, role)</code></td><td>—</td><td>Store</td><td><code>actor</code> is required. Role defaults to read-only, which cannot create a new store.</td></tr>
@@ -294,33 +267,6 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
       <p>Epochs use the same rule. An epoch spans <code>[event − pre_s, event + post_s)</code>, so every epoch has exactly <code>round(pre_s·fs) + round(post_s·fs)</code> samples and they stack into one array. An event whose epoch would start before sample 0 or end past the last sample is skipped and counted.</p>
     </section>
 
-    <section id="safeguards">
-      <div class="eyebrow">Design decisions</div>
-      <h2>Integrity, audit, and privacy</h2>
-      <div class="decisions">
-        <div class="decision">
-          <h3>Why SQLite plus .npy</h3>
-          <p>Metadata and events are small and relational: you filter by subject, protocol, and event type. Signals are large dense arrays read in bulk. SQL suits the first and a flat binary file suits the second. Both are single files, need no server, and come with Python and numpy, so the store can be opened anywhere.</p>
-        </div>
-        <div class="decision">
-          <h3>Why the checksum</h3>
-          <p>The database and the signal files can drift apart: a file is overwritten, half-copied, or edited by another tool. The SHA-256 recorded at write time is checked on every read, so a single changed sample raises <code>ChecksumError</code> before any analysis runs on it. A test edits one value in a file and checks that both window and epoch reads refuse it.</p>
-        </div>
-        <div class="decision">
-          <h3>Why the audit log</h3>
-          <p>With human-subject data you need to be able to say afterwards who read or changed what, and when. Every method appends <code>(actor, action, object_id, UTC time)</code>. Writes log in the same transaction as the data. Denied write attempts are logged too, as <code>add_subject:denied</code>.</p>
-        </div>
-        <div class="decision">
-          <h3>Privacy-related choices</h3>
-          <p>Subjects are bare UUIDs. Protocol labels, event types, and parameter names must match <code>[A-Za-z0-9_.-]{1,64}</code>, so no field can hold free text like a name or a clinical note. The de-identified export drops internal IDs, file paths, and absolute start times; event times stay relative to the start of the recording. These are design choices. They do not on their own make data de-identified.</p>
-        </div>
-        <div class="decision">
-          <h3>Roles</h3>
-          <p>A store opens read-only unless you ask for <code>Role.READ_WRITE</code>. The caller declares the role, so it prevents accidental writes, not deliberate misuse.</p>
-        </div>
-      </div>
-    </section>
-
     <section id="tests">
       <div class="eyebrow">Tests</div>
       <h2>What the 80 tests check</h2>
@@ -342,30 +288,14 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
       <p>CI runs <code>ruff check</code>, <code>ruff format --check</code>, and <code>pytest</code> on Python 3.11 and 3.12. <code>scripts/demo.py</code> generates a 60-second, 8-channel, 250 Hz synthetic recording with nine TMS pulses, stores it, and prints the averaged evoked response per channel.</p>
     </section>
 
-    <section id="scope">
-      <div class="eyebrow">Scope</div>
-      <h2>Left out on purpose</h2>
-      <p>Each of these would be needed in a real system. They were left out to keep the sample small and the core paths easy to read.</p>
-      <ul class="gaps">
-        <li><strong>Update and delete</strong><span>Recordings are append-only. Changing a recording in place would silently change the data earlier analyses used, and a delete has to remove the file, the rows, the events, and keep an audit entry, all consistently. A real system needs deletion at least for consent withdrawal: an audited, admin-only hard delete, with corrections stored as new versions instead of edits.</span></li>
-        <li><strong>Memory-mapped or partial reads</strong><span><code>get_window</code> loads the whole file, verifies the checksum over all of it, then slices. That is fine for minutes of 8-channel data. A one-hour, 256-channel, 2 kHz float32 recording is about 3.7 GB, and you would not want to read it all for a two-second window. The fix is chunked storage (HDF5 or Zarr) with a checksum per chunk, so a read touches and verifies only the chunks it needs.</span></li>
-        <li><strong>Concurrent writers</strong><span>SQLite allows one writer at a time. Two processes writing at once will wait, then fail with <code>database is locked</code>. There is no WAL mode, retry, or busy timeout configured. UUID file names do prevent two writers from overwriting each other's signal files. Multi-user use would move metadata to Postgres.</span></li>
-        <li><strong>A command-line interface</strong><span>The package is Python-only. Commands like <code>neurostore ingest</code>, <code>list</code>, and <code>export</code> would be a thin wrapper over the same methods, but the spec asked for a library.</span></li>
-      </ul>
-    </section>
-
-    <section id="clinical">
-      <div class="eyebrow">Known gaps</div>
-      <h2>What would change for real clinical data</h2>
-      <p>This package is not suitable for real patient data as it stands.</p>
+    <section id="more">
+      <div class="eyebrow">Design and limits</div>
+      <h2>Why it is built this way, and what it leaves out</h2>
+      <p>These are written up once, in the README:</p>
       <ul class="plain">
-        <li><strong>Encryption at rest</strong>, with managed keys. Today the database and signals are plain files.</li>
-        <li><strong>Real authentication and authorization.</strong> Actor and role should come from an identity provider and be enforced outside the client process.</li>
-        <li><strong>A tamper-evident audit log</strong> in an append-only store that users cannot edit.</li>
-        <li><strong>Formal de-identification review.</strong> Signals, event timing, and metadata can still identify someone.</li>
-        <li><strong>Institutional compliance review</strong>: IRB, data-use agreements, and the institution's security and privacy offices.</li>
-        <li><strong>Scalable storage</strong>: HDF5 or Zarr for chunked signals, Parquet for events and exports, Postgres for multi-user metadata.</li>
-        <li><strong>Standard formats</strong>: BIDS (EEG and iEEG) and EDF/EDF+ import and export.</li>
+        <li><a href="https://github.com/ashutoshdey21/neurostore#design-decisions">Design decisions</a>: why SQLite plus <code>.npy</code>, why the checksum, why the audit log, the privacy-related choices, and roles.</li>
+        <li><a href="https://github.com/ashutoshdey21/neurostore#left-out-on-purpose">Left out on purpose</a>: update and delete, partial reads, concurrent writers, and a CLI, with what each would take.</li>
+        <li><a href="https://github.com/ashutoshdey21/neurostore#what-i-would-change-for-real-clinical-data">What I would change for real clinical data</a>: encryption, authentication, audit, de-identification and compliance review, storage, and standard formats.</li>
       </ul>
     </section>
 
