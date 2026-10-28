@@ -7,6 +7,8 @@ neurostimulation experiments. All data used here is synthetic.
 
 For an illustrated walkthrough of the whole project (data model, architecture, API, time
 conventions, design decisions, and scope), open [docs/index.html](docs/index.html) in a browser.
+For setup, inspecting a store, handling errors, and backup and restore, see
+[docs/RUNBOOK.md](docs/RUNBOOK.md).
 
 ## Quickstart
 
