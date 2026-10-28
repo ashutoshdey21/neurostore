@@ -20,7 +20,7 @@ python3.11 -m venv .venv          # any Python 3.11+
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
-.venv/bin/pytest -q               # expect: 41 passed
+.venv/bin/pytest -q               # expect: 80 passed
 .venv/bin/python scripts/demo.py  # expect: epochs (7, 8, 100), skipped 2
 ```
 

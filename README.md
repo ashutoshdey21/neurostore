@@ -52,8 +52,29 @@ pip install -e ".[dev]" && ruff check . && pytest
  audit_log (actor, action, object_id, utc)
 ```
 
-Source layout: `models.py` holds the data types, errors, and validation; `store.py` holds the
-SQLite schema and the `Store` class.
+The code is in three layers. Each depends only on the layers below it, and
+`tests/test_architecture.py` fails if that rule is broken.
+
+```
+src/neurostore/
+├── store.py              Store: the public entry point. Checks the role, validates input,
+│                         calls storage, writes the audit log. No SQL or file formats.
+├── infrastructure/       How things are saved
+│   ├── database.py       Database: every SQL statement (schema, inserts, queries)
+│   ├── signal_files.py   SignalFiles: .npy save/load with SHA-256 verification
+│   └── exports.py        write_export: writes an export folder
+└── domain/               Rules and arithmetic, no file or database access
+    ├── models.py         Event, RecordingInfo, Epochs, Role
+    ├── errors.py         ValidationError, AccessDeniedError, ChecksumError, NotFoundError
+    ├── validation.py     data-model rules (sampling rate, channels, events, labels, UTC)
+    ├── windows.py        time → sample ranges, window and epoch cutting on plain arrays
+    └── export.py         what a de-identified export may contain
+```
+
+Tests mirror the layers. `tests/domain` tests rules and arithmetic on plain arrays,
+`tests/infrastructure` tests each storage class against a temporary directory, and
+`tests/test_store.py` covers only what `Store` adds: wiring, access control, the audit trail,
+and cleanup when a write fails. Each rule is tested once, in the layer that owns it.
 
 Conventions:
 

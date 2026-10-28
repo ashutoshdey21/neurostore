@@ -157,8 +157,8 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 3rem; }
       <div class="chips">
         <span class="chip">Python 3.11+</span>
         <span class="chip">numpy · sqlite3</span>
-        <span class="chip">~500 lines of source</span>
-        <span class="chip">41 tests</span>
+        <span class="chip">3 layers</span>
+        <span class="chip">80 tests · 99% line coverage</span>
       </div>
     </header>
 
@@ -235,7 +235,18 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
         <span class="step">verify checksum (reads)</span><span class="arrow">→</span>
         <span class="step">append audit row</span>
       </div>
-      <p>The code is split in two. <a href="../src/neurostore/models.py"><code>models.py</code></a> holds the data types, error classes, and validation rules, with no I/O. <a href="../src/neurostore/store.py"><code>store.py</code></a> holds the SQLite schema and the <code>Store</code> class. Writes put the audit row in the same transaction as the data, so a write and its log entry succeed or fail together. If the database insert for a recording fails, its <code>.npy</code> file is removed again.</p>
+      <p>The code is in three layers, and each one depends only on the layers below it. A test fails if one imports a layer it shouldn't.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Modules</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Public entry point</td><td><a href="../src/neurostore/store.py"><code>store.py</code></a></td><td>Checks the role, validates input, calls storage, writes the audit log. Contains no SQL and no file formats.</td></tr>
+            <tr><td>Infrastructure</td><td><code>database.py</code>, <code>signal_files.py</code>, <code>exports.py</code></td><td>How things are saved: every SQL statement, <code>.npy</code> files with checksum checks, and export folders.</td></tr>
+            <tr><td>Domain</td><td><code>models.py</code>, <code>errors.py</code>, <code>validation.py</code>, <code>windows.py</code>, <code>export.py</code></td><td>Data types, rules, and arithmetic on plain arrays. No file or database access, so it can be tested without a store.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Writes put the audit row in the same transaction as the data, so a write and its log entry succeed or fail together. If the database insert for a recording fails, its <code>.npy</code> file is removed again.</p>
     </section>
 
     <section id="api">
@@ -312,17 +323,19 @@ evoked = epochs.mean(axis=0)   # (channels, samples)</code></pre>
 
     <section id="tests">
       <div class="eyebrow">Tests</div>
-      <h2>What the 41 tests check</h2>
+      <h2>What the 80 tests check</h2>
       <div class="table-wrap">
         <table>
           <thead><tr><th>File</th><th>Covers</th></tr></thead>
           <tbody>
-            <tr><td><code>test_roundtrip.py</code></td><td>Signal, metadata, and events come back identical; reopening from disk; list filters; export contains no internal IDs or paths.</td></tr>
-            <tr><td><code>test_window.py</code></td><td>First sample, last sample, whole recording, the 0.1 × 100 rounding case, tiling, channel order, out-of-range windows.</td></tr>
-            <tr><td><code>test_epochs.py</code></td><td>Shapes and contents, epochs flush against both edges, skip counts, filtering by event type, no matching events.</td></tr>
-            <tr><td><code>test_integrity.py</code></td><td>One edited sample in a <code>.npy</code> file is caught on read.</td></tr>
-            <tr><td><code>test_validation.py</code></td><td>Sampling rate, channel count, duplicate names, dtype and shape, naive datetimes, events outside the recording (with nothing partially written), free-text labels, unknown IDs.</td></tr>
-            <tr><td><code>test_access.py</code></td><td>Read-only cannot write or create a store; actor required; the audit log has the exact sequence of reads, writes, and the denial, in UTC.</td></tr>
+            <tr><td><code>domain/test_validation.py</code></td><td>Sampling rate, channel count, duplicate names, dtype and shape, events outside the recording, parameter values, free-text labels, UTC conversion.</td></tr>
+            <tr><td><code>domain/test_windows.py</code></td><td>First sample, last sample, whole recording, the 0.1 × 100 rounding case, tiling, channel order, epoch shapes, epochs flush against both edges, skip counts.</td></tr>
+            <tr><td><code>domain/test_export.py</code></td><td>Export metadata keeps signal facts and drops IDs, protocol, and start time.</td></tr>
+            <tr><td><code>infrastructure/test_database.py</code></td><td>Recording round trip, combined filters, event order, rollback on error, foreign keys, audit order, reopening.</td></tr>
+            <tr><td><code>infrastructure/test_signal_files.py</code></td><td>Save and load round trip; one edited sample is caught on read.</td></tr>
+            <tr><td><code>infrastructure/test_exports.py</code></td><td>Export folder contents; an existing folder is never overwritten.</td></tr>
+            <tr><td><code>test_store.py</code></td><td>End-to-end round trip, wiring of windows, epochs and export, nothing written on invalid input, file cleanup when the database write fails, every read refuses a tampered file, roles, the exact audit sequence.</td></tr>
+            <tr><td><code>test_architecture.py</code></td><td>Domain imports no storage code; infrastructure never imports <code>Store</code>; <code>Store</code> uses no SQL or file-format modules.</td></tr>
           </tbody>
         </table>
       </div>
